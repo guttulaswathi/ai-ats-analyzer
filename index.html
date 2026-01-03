@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI ATS Analyzer</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Poppins:wght@500;600;700&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #0f172a;
+            background-image:
+                radial-gradient(at 0% 0%, hsla(253, 16%, 7%, 1) 0, transparent 50%),
+                radial-gradient(at 50% 0%, hsla(225, 39%, 30%, 1) 0, transparent 50%),
+                radial-gradient(at 100% 0%, hsla(339, 49%, 30%, 1) 0, transparent 50%);
+            background-attachment: fixed;
+            min-height: 100vh;
+            color: #e2e8f0;
+        }
+
+        h1,
+        h2,
+        h3 {
+            font-family: 'Poppins', sans-serif;
+        }
+
+        .glass-panel {
+            background: rgba(30, 41, 59, 0.7);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+        }
+
+        .input-glass {
+            background: rgba(15, 23, 42, 0.6);
+            border: 1px solid rgba(148, 163, 184, 0.2);
+            color: white;
+            transition: all 0.3s ease;
+        }
+
+        .input-glass:focus {
+            background: rgba(15, 23, 42, 0.8);
+            border-color: #6366f1;
+            outline: none;
+        }
+
+        /* Animations */
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .animate-enter {
+            animation: fadeIn 0.6s ease-out forwards;
+        }
+
+        /* Loading Spinner */
+        .loader-ring {
+            display: inline-block;
+            width: 40px;
+            height: 40px;
+        }
+
+        .loader-ring:after {
+            content: " ";
+            display: block;
+            width: 32px;
+            height: 32px;
+            margin: 4px;
+            border-radius: 50%;
+            border: 3px solid #6366f1;
+            border-color: #6366f1 transparent #6366f1 transparent;
+            animation: ring 1.2s linear infinite;
+        }
+
+        @keyframes ring {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        .drag-active {
+            border-color: #6366f1 !important;
+            background-color: rgba(99, 102, 241, 0.1) !important;
+            transform: scale(1.01);
+        }
+
+        .progress-ring__circle {
+            transition: stroke-dashoffset 1.5s ease-in-out;
+            transform: rotate(-90deg);
+            transform-origin: 50% 50%;
+        }
+    </style>
+</head>
+
+<body class="flex items-center justify-center p-4 sm:p-8">
+
+    <div class="w-full max-w-7xl">
+
+        <div class="text-center mb-10 animate-enter">
+            <h1 class="text-4xl md:text-5xl font-bold text-white mb-4 tracking-tight">
+                AI <span class="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-cyan-400">ATS
+                    Analyzer</span>
+            </h1>
+            <p class="text-slate-400 text-lg max-w-2xl mx-auto">
+                Deep analysis: We parse your resume, parse the job, and perform a detailed gap analysis.
+            </p>
+        </div>
+
+        <div class="glass-panel rounded-3xl overflow-hidden animate-enter shadow-2xl" style="animation-delay: 0.1s;">
+            <div class="p-6 md:p-10">
+
+                <form id="uploadForm" class="grid md:grid-cols-2 gap-8 relative">
+
+                    <div class="flex flex-col h-full">
+                        <label class="block text-sm font-semibold text-slate-300 mb-2 uppercase tracking-wide">
+                            <i class="fa-solid fa-file-pdf mr-2 text-indigo-400"></i> 1. Upload Resume
+                        </label>
+                        <div id="dropZone"
+                            class="flex-1 border-2 border-dashed border-slate-600 rounded-2xl bg-slate-800/50 p-6 text-center transition-all duration-300 hover:border-indigo-400 hover:bg-slate-800 group cursor-pointer flex flex-col items-center justify-center min-h-[250px]">
+                            <input id="resume-file" name="resume" type="file" class="hidden" accept=".pdf" />
+
+                            <div class="flex flex-col items-center justify-center space-y-3">
+                                <div
+                                    class="w-14 h-14 bg-slate-700 text-indigo-400 rounded-full shadow-md flex items-center justify-center text-2xl group-hover:scale-110 transition-transform">
+                                    <i class="fa-solid fa-cloud-arrow-up"></i>
+                                </div>
+                                <div>
+                                    <h3 class="text-lg font-semibold text-slate-200">Drag & Drop Resume</h3>
+                                    <p class="text-slate-500 text-sm mt-1">PDF Format Only</p>
+                                </div>
+                                <p id="fileName"
+                                    class="text-sm font-medium text-emerald-400 hidden bg-emerald-900/30 px-3 py-1 rounded-full border border-emerald-500/30">
+                                    <i class="fa-solid fa-check-circle mr-1"></i> <span id="fileNameText"></span>
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="flex flex-col h-full">
+                        <label class="block text-sm font-semibold text-slate-300 mb-2 uppercase tracking-wide">
+                            <i class="fa-solid fa-briefcase mr-2 text-indigo-400"></i> 2. Paste Job Description
+                        </label>
+                        <textarea id="jobDescription" name="job_description"
+                            class="flex-1 w-full p-4 rounded-2xl input-glass text-slate-200 placeholder-slate-500 text-sm resize-none min-h-[250px]"
+                            placeholder="Paste the full job description here (Responsibilities, Requirements, etc)..."></textarea>
+                    </div>
+
+                    <div class="md:col-span-2 pt-4">
+                        <button type="submit"
+                            class="w-full bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-700 hover:to-violet-700 text-white font-bold py-4 rounded-xl shadow-lg shadow-indigo-500/30 transform hover:-translate-y-1 transition-all duration-200 text-lg flex items-center justify-center">
+                            <i class="fa-solid fa-microchip mr-2"></i> Run ATS Analysis
+                        </button>
+                    </div>
+                </form>
+
+                <div id="loading" class="hidden flex flex-col items-center justify-center py-12">
+                    <div class="loader-ring mb-4"></div>
+                    <h3 class="text-xl font-semibold text-white">Deep Scanning...</h3>
+                    <p class="text-slate-400 text-sm mt-2">Parsing Resume &rarr; Parsing Job Description &rarr;
+                        Calculating Match</p>
+                </div>
+
+                <div id="errorMessage"
+                    class="hidden mt-6 bg-red-900/30 text-red-200 p-4 rounded-xl border border-red-500/30 flex items-center">
+                    <i class="fa-solid fa-triangle-exclamation mr-3 text-xl"></i>
+                    <span id="errorText"></span>
+                </div>
+
+            </div>
+        </div>
+
+        <div id="results" class="hidden mt-8 grid grid-cols-1 md:grid-cols-4 gap-6 animate-enter"
+            style="animation-delay: 0.2s;">
+
+            <div
+                class="glass-panel p-6 rounded-3xl flex flex-col items-center justify-center text-center col-span-1 shadow-lg border-t-4 border-indigo-500">
+                <h3 class="text-xs font-bold text-slate-400 mb-6 tracking-widest uppercase">ATS Match Score</h3>
+                <div class="relative w-40 h-40">
+                    <svg class="w-full h-full" viewBox="0 0 120 120">
+                        <circle class="text-slate-700" stroke-width="8" stroke="currentColor" fill="transparent" r="52"
+                            cx="60" cy="60" />
+                        <circle id="progressCircle" class="text-indigo-500 progress-ring__circle" stroke-width="8"
+                            stroke-linecap="round" stroke="currentColor" fill="transparent" r="52" cx="60" cy="60"
+                            stroke-dasharray="326.72" stroke-dashoffset="326.72" />
+                    </svg>
+                    <div class="absolute top-0 left-0 w-full h-full flex flex-col items-center justify-center">
+                        <span id="scoreText" class="text-5xl font-bold text-white">0</span>
+                        <span class="text-sm text-slate-400 font-medium">%</span>
+                    </div>
+                </div>
+                <div id="scoreMessage" class="mt-4 text-sm font-medium text-slate-300">Evaluating...</div>
+            </div>
+
+            <div class="col-span-1 md:col-span-3 grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="glass-panel p-6 rounded-3xl border-l-4 border-emerald-500 bg-emerald-900/10">
+                    <h3 class="text-lg font-bold text-emerald-400 mb-4 flex items-center">
+                        <i class="fa-solid fa-check-double mr-2"></i> Matching Skills
+                    </h3>
+                    <div id="matchingList" class="space-y-2 text-slate-300 text-sm"></div>
+                </div>
+
+                <div class="glass-panel p-6 rounded-3xl border-l-4 border-rose-500 bg-rose-900/10">
+                    <h3 class="text-lg font-bold text-rose-400 mb-4 flex items-center">
+                        <i class="fa-solid fa-xmark mr-2"></i> Missing Skills
+                    </h3>
+                    <div id="missingList" class="space-y-2 text-slate-300 text-sm"></div>
+                </div>
+            </div>
+
+            <div class="col-span-1 md:col-span-4 grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="glass-panel p-6 rounded-3xl">
+                    <h3 class="text-lg font-bold text-indigo-400 mb-4">
+                        <i class="fa-solid fa-star mr-2"></i> Candidate Strengths
+                    </h3>
+                    <div id="strengthsList" class="space-y-2 text-slate-300 text-sm"></div>
+                </div>
+
+                <div class="glass-panel p-6 rounded-3xl">
+                    <h3 class="text-lg font-bold text-amber-400 mb-4">
+                        <i class="fa-solid fa-wrench mr-2"></i> Improvement Suggestions
+                    </h3>
+                    <div id="improvementsList" class="space-y-2 text-slate-300 text-sm"></div>
+                </div>
+            </div>
+        </div>
+
+        <div id="rawResponse"
+            class="hidden mt-6 p-6 glass-panel rounded-2xl text-slate-400 text-xs font-mono whitespace-pre-wrap"></div>
+
+        <footer class="mt-12 text-center text-slate-500 text-sm pb-8">
+            <p>&copy; 2026 AI ATS Analyzer.</p>
+        </footer>
+
+    </div>
+
+    <script>
+        const fileInput = document.getElementById('resume-file');
+        const dropZone = document.getElementById('dropZone');
+        const fileNameDisplay = document.getElementById('fileName');
+        const fileNameText = document.getElementById('fileNameText');
+        const jdInput = document.getElementById('jobDescription');
+        const form = document.getElementById('uploadForm');
+        const loadingDiv = document.getElementById('loading');
+        const resultsDiv = document.getElementById('results');
+        const errorDiv = document.getElementById('errorMessage');
+
+        // --- Drag & Drop UI Logic ---
+        dropZone.addEventListener('click', () => fileInput.click());
+
+        ['dragenter', 'dragover'].forEach(eventName => {
+            dropZone.addEventListener(eventName, (e) => {
+                e.preventDefault();
+                dropZone.classList.add('drag-active');
+            }, false);
+        });
+
+        ['dragleave', 'drop'].forEach(eventName => {
+            dropZone.addEventListener(eventName, (e) => {
+                e.preventDefault();
+                dropZone.classList.remove('drag-active');
+            }, false);
+        });
+
+        dropZone.addEventListener('drop', (e) => {
+            const files = e.dataTransfer.files;
+            if (files.length) {
+                fileInput.files = files;
+                updateFileName(files[0].name);
+            }
+        });
+
+        fileInput.addEventListener('change', function () {
+            if (this.files && this.files[0]) {
+                updateFileName(this.files[0].name);
+            }
+        });
+
+        function updateFileName(name) {
+            fileNameText.textContent = name;
+            fileNameDisplay.classList.remove('hidden');
+        }
+
+        // --- Form Submission & Parsing ---
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            if (!fileInput.files[0] || !jdInput.value.trim()) {
+                alert("Please upload a resume AND paste a job description.");
+                return;
+            }
+
+            // UI Transitions
+            resultsDiv.classList.add('hidden');
+            errorDiv.classList.add('hidden');
+            form.classList.add('opacity-50', 'pointer-events-none');
+            loadingDiv.classList.remove('hidden');
+
+            const formData = new FormData();
+            formData.append('resume', fileInput.files[0]);
+            formData.append('job_description', jdInput.value);
+
+            try {
+                const response = await fetch('/analyze', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const data = await response.json();
+
+                if (data.error) {
+                    throw new Error(data.error);
+                }
+
+                // Process the AI Response
+                processAnalysis(data.analysis);
+
+                setTimeout(() => {
+                    resultsDiv.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }, 100);
+
+            } catch (err) {
+                document.getElementById('errorText').textContent = err.message;
+                errorDiv.classList.remove('hidden');
+            } finally {
+                loadingDiv.classList.add('hidden');
+                form.classList.remove('opacity-50', 'pointer-events-none');
+            }
+        });
+
+        function processAnalysis(text) {
+            resultsDiv.classList.remove('hidden');
+
+            /* REGEX STRATEGY:
+               The backend returns sections like "1. Match percentage", "2. Matching skills", etc.
+               We use regex to extract text *between* these known headers.
+            */
+
+            // 1. Extract Score
+            const scoreMatch = text.match(/(?:Match percentage|percentage|score).*?(\d+)/i);
+            const score = scoreMatch ? parseInt(scoreMatch[1]) : 0;
+            animateScore(score);
+
+            // 2. Extract Sections
+            // Helper regex to find content between specific headers
+            const extractSection = (startPattern, endPattern) => {
+                const regex = new RegExp(`${startPattern}([\\s\\S]*?)(?:${endPattern}|$)`, 'i');
+                const match = text.match(regex);
+                return match ? match[1].trim() : null;
+            };
+
+            const matchingText = extractSection('Matching skills', 'Missing skills');
+            const missingText = extractSection('Missing skills', 'Strengths');
+            const strengthsText = extractSection('Strengths', 'Improvement suggestions');
+            const improvementText = extractSection('Improvement suggestions', 'IMPORTANT'); // 'IMPORTANT' is at the end of prompt
+
+            // Render Lists
+            renderList(matchingText, 'matchingList', 'text-emerald-300', 'fa-check');
+            renderList(missingText, 'missingList', 'text-rose-300', 'fa-xmark');
+            renderList(strengthsText, 'strengthsList', 'text-slate-300', 'fa-star');
+            renderList(improvementText, 'improvementsList', 'text-amber-300', 'fa-arrow-right');
+
+            // Fallback: If regex fails completely, show raw text
+            if (!scoreMatch && !matchingText) {
+                document.getElementById('rawResponse').textContent = text;
+                document.getElementById('rawResponse').classList.remove('hidden');
+            }
+        }
+
+        function renderList(rawText, elementId, colorClass, icon) {
+            const el = document.getElementById(elementId);
+            if (!rawText) {
+                el.innerHTML = '<span class="italic opacity-50">No specific data found.</span>';
+                return;
+            }
+
+            // Split by newlines or hyphens to create list items
+            const items = rawText.split(/\n/).filter(line => line.trim().length > 0);
+
+            el.innerHTML = items.map(item => {
+                // Clean the text (remove bullets, numbers, hyphens)
+                const cleanItem = item.replace(/^[\d\.\-\*]+/, '').trim();
+                if (!cleanItem) return '';
+                return `
+                    <div class="flex items-start gap-3">
+                        <i class="fa-solid ${icon} ${colorClass} mt-1.5 text-xs shrink-0"></i>
+                        <span class="leading-relaxed">${cleanItem}</span>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function animateScore(targetScore) {
+            const circle = document.getElementById('progressCircle');
+            const radius = circle.r.baseVal.value;
+            const circumference = radius * 2 * Math.PI;
+            const offset = circumference - (targetScore / 100) * circumference;
+            const textElement = document.getElementById('scoreText');
+            const msgElement = document.getElementById('scoreMessage');
+
+            // Animate Number
+            let current = 0;
+            const interval = setInterval(() => {
+                if (current >= targetScore) clearInterval(interval);
+                else {
+                    current++;
+                    textElement.innerText = current;
+                }
+            }, 20);
+
+            // Animate Circle
+            circle.style.strokeDashoffset = offset;
+
+            // Update Color & Message based on score
+            if (targetScore >= 80) {
+                circle.classList.add('text-emerald-500');
+                circle.classList.remove('text-indigo-500');
+                msgElement.innerText = "Excellent Match!";
+                msgElement.className = "mt-4 text-sm font-bold text-emerald-400";
+            } else if (targetScore >= 50) {
+                circle.classList.add('text-amber-500');
+                circle.classList.remove('text-indigo-500');
+                msgElement.innerText = "Moderate Match";
+                msgElement.className = "mt-4 text-sm font-bold text-amber-400";
+            } else {
+                circle.classList.add('text-rose-500');
+                circle.classList.remove('text-indigo-500');
+                msgElement.innerText = "Low Match";
+                msgElement.className = "mt-4 text-sm font-bold text-rose-400";
+            }
+        }
+    </script>
+</body>
+
+</html>
